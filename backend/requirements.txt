@@ -4,5 +4,5 @@ motor
 python-dotenv
 tensorflow-cpu
 numpy
-google-genai
+google-generativeai
 pydantic

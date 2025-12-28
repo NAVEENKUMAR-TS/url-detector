@@ -1,21 +1,20 @@
 import os
-import google.genai as genai
-from google.genai import types
+import google.generativeai as genai
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-client = None
 
 if GEMINI_API_KEY:
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=GEMINI_API_KEY)
     except Exception as e:
-        print(f"Error initializing Gemini client: {e}")
+        print(f"Error configuring Gemini: {e}")
 
 def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
-    if not client:
+    if not GEMINI_API_KEY:
         return {
             "verdict": prediction_label,
             "confidence_score": confidence,
@@ -31,7 +30,7 @@ def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
     - Local Model Confidence: {confidence:.2f}
 
     Your Task:
-    1. Independently verify if the URL is "Safe", "Malicious", or "Adversarial" (phishing, evasion techniques, etc.).
+    1. Independently verify if the URL is "Safe", "Malicious", or "Adversarial".
     2. If the local model is wrong, OVERRIDE it.
     3. Provide a reasoning summary strictly limited to 3 lines.
     4. If Adversarial, identify the specific technique/pattern.
@@ -46,25 +45,24 @@ def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
     """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
+        # Use the standard model name
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        # Request JSON output
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
         )
         
-        # Parse JSON
-        import json
         try:
             data = json.loads(response.text)
             return data
         except json.JSONDecodeError:
-            # Fallback if raw text
+            # Fallback for parsing error
             return {
                 "verdict": prediction_label,
                 "confidence_score": confidence,
-                "reasoning": "Gemini analysis format error.",
+                "reasoning": "Gemini response format error.",
                 "adversarial_technique": None
             }
 
