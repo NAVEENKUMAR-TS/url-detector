@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+motor
+python-dotenv
+tensorflow
+numpy
+google-genai
+pydantic
