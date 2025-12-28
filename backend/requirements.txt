@@ -2,7 +2,7 @@ fastapi
 uvicorn
 motor
 python-dotenv
-tensorflow
+tensorflow-cpu
 numpy
 google-genai
 pydantic
