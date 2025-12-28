@@ -55,17 +55,43 @@ async def scan_url(request: ScanRequest):
         raise HTTPException(status_code=400, detail="URL is required")
 
     # 1. Local Model Prediction
-    status, _, confidence = predict_url_safety(url)
+    local_label, _, local_conf = predict_url_safety(url)
 
-    # 2. Gemini Analysis (Double Check)
-    analysis = get_gemini_analysis(url, status, confidence)
+    # 2. Dual Verification via Gemini
+    ai_result = get_gemini_analysis(url, local_label, float(local_conf))
+    
+    # Check if ai_result is a dict (expected) or string (error fallback)
+    if isinstance(ai_result, str):
+         # If it returned a string error, use local values
+         final_status = local_label
+         final_conf = float(local_conf)
+         reasoning = ai_result
+         technique = None
+    else:
+        # 3. Consensus Logic (Gemini is the Arbiter)
+        final_status = ai_result.get("verdict", local_label)
+        final_conf = float(ai_result.get("confidence_score", local_conf))
+        reasoning = ai_result.get("reasoning", "No info.")
+        technique = ai_result.get("adversarial_technique")
 
-    # 3. Save to MongoDB
+    # 4. Strict Formatting for UI
+    # "1. result : safe / malicious / adversarial"
+    # "2. confidence score"
+    # "3. reasoning with only 3 liines."
+    
+    formatted_analysis = f"1. Result: {final_status}\n"
+    formatted_analysis += f"2. Confidence Score: {final_conf:.2f}\n"
+    formatted_analysis += f"3. Reasoning: {reasoning}"
+    
+    if technique and final_status in ["Malicious", "Adversarial"]:
+        formatted_analysis += f"\n\nAdversarial Pattern: {technique}"
+
+    # Save to MongoDB
     scan_data = {
         "url": url,
-        "status": status,
-        "confidence": confidence,
-        "analysis": analysis,
+        "status": final_status,
+        "confidence": final_conf,
+        "analysis": formatted_analysis,
         "timestamp": datetime.utcnow()
     }
     
@@ -73,7 +99,6 @@ async def scan_url(request: ScanRequest):
         await scan_collection.insert_one(scan_data)
     except Exception as e:
         print(f"Failed to save to DB: {e}")
-        # Continue execution even if DB save fails, just return result
     
     return scan_data
 

@@ -1,5 +1,6 @@
 import os
 import google.genai as genai
+from google.genai import types
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,28 +16,63 @@ if GEMINI_API_KEY:
 
 def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
     if not client:
-        return "Gemini API Key not configured. Unable to fetch detailed explanation."
+        return {
+            "verdict": prediction_label,
+            "confidence_score": confidence,
+            "reasoning": "Gemini API Key missing.",
+            "adversarial_technique": None
+        }
 
     prompt = f"""
-    Analyze this URL: {url}
+    You are a cybersecurity expert. Analyze this URL for safety: "{url}"
     
-    Our local deep learning model prediction:
-    - Status: {prediction_label}
-    - Confidence: {confidence:.4f}
+    Context:
+    - Local Deep Learning Model Prediction: {prediction_label}
+    - Local Model Confidence: {confidence:.2f}
 
-    Please provide a concise security analysis. 
-    1. Confirm if this looks safe or malicious.
-    2. Explain why (e.g., suspicious TLD, typo-squatting, known phishing pattern, or legitimate domain).
-    3. If it's adversarial (tricky), mention the technique used.
-    
-    Keep the response short (under 3 sentences per point) and professional.
+    Your Task:
+    1. Independently verify if the URL is "Safe", "Malicious", or "Adversarial" (phishing, evasion techniques, etc.).
+    2. If the local model is wrong, OVERRIDE it.
+    3. Provide a reasoning summary strictly limited to 3 lines.
+    4. If Adversarial, identify the specific technique/pattern.
+
+    Output MUST be valid JSON only:
+    {{
+        "verdict": "Safe" | "Malicious" | "Adversarial",
+        "confidence_score": <float between 0.0 and 1.0>,
+        "reasoning": "<string, max 3 lines>",
+        "adversarial_technique": "<string or null>"
+    }}
     """
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash", # Updated to a widely available model, or use 1.5-flash if preferred
-            contents=prompt
+            model="gemini-2.0-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
         )
-        return response.text
+        
+        # Parse JSON
+        import json
+        try:
+            data = json.loads(response.text)
+            return data
+        except json.JSONDecodeError:
+            # Fallback if raw text
+            return {
+                "verdict": prediction_label,
+                "confidence_score": confidence,
+                "reasoning": "Gemini analysis format error.",
+                "adversarial_technique": None
+            }
+
     except Exception as e:
-        return f"[Gemini Error]: {str(e)}"
+        print(f"Gemini API Error: {e}")
+        return {
+            "verdict": prediction_label,
+            "confidence_score": confidence,
+            "reasoning": "AI Verification unavailable.",
+            "adversarial_technique": None
+        }
