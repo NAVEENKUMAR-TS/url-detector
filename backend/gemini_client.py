@@ -47,7 +47,7 @@ def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -73,6 +73,6 @@ def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
         return {
             "verdict": prediction_label,
             "confidence_score": confidence,
-            "reasoning": "AI Verification unavailable.",
+            "reasoning": f"AI Verification failed: {str(e)}",
             "adversarial_technique": None
         }
