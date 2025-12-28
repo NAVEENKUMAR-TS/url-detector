@@ -45,8 +45,8 @@ def get_gemini_analysis(url: str, prediction_label: str, confidence: float):
     """
 
     try:
-        # Use the standard model name
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # User explicitly requested "Gemini 2.5"
+        model = genai.GenerativeModel("gemini-2.5-flash")
         
         # Request JSON output
         response = model.generate_content(
