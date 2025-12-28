@@ -9,17 +9,21 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS (CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        primary: "#6366f1",
-                        secondary: "#ec4899",
-                        dark: "#0f172a",
-                        surface: "#1e293b",
+                        bg: "#020617",       // Very dark blue/black
+                        surface: "#0f172a",  // Slate 900
+                        primary: "#2dd4bf",  // Teal 400
+                        primaryHover: "#14b8a6", // Teal 500
+                        secondary: "#94a3b8", // Slate 400
+                        danger: "#ef4444",   // Red 500
+                        success: "#10b981",  // Emerald 500
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -29,26 +33,50 @@
         }
     </script>
 
-    <!-- React & Babel (CDN) -->
+    <!-- React & Babel -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Use Babel 7 for better React 18 support -->
+    <!-- Use Babel 7 -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Axios -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
+    <!-- Icons (Lucide) - We will use SVGs directly for cleaner no-build integration -->
+
     <style>
         body {
-            background-color: #0f172a;
-            background-image:
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
-            background-attachment: fixed;
-            color: #e2e8f0;
+            background-color: #020617;
+            color: #f8fafc;
             font-family: 'Inter', sans-serif;
             margin: 0;
             min-height: 100vh;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
         }
 
         #error-log {
@@ -67,7 +95,7 @@
         }
     </style>
     <script>
-        // Global Error Handler to show issues on screen
+        // Global Error Handler
         window.onerror = function (msg, url, line, col, error) {
             const errorBox = document.getElementById('error-log');
             if (errorBox) {
@@ -83,16 +111,17 @@
 <body>
     <div id="error-log"></div>
     <div id="root">
+        <!-- Initial Loading State -->
         <div style="height: 100vh; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
             <div style="text-align: center;">
-                <svg class="animate-spin" style="width: 40px; height: 40px; margin-bottom: 1rem;"
+                <svg class="animate-spin" style="width: 40px; height: 40px; margin-bottom: 1rem; color: #2dd4bf;"
                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                     </path>
                 </svg>
-                <p>Initializing App...</p>
+                <p>Initializing Dashboard...</p>
             </div>
         </div>
     </div>
@@ -101,191 +130,327 @@
         const { useState, useEffect } = React;
         const { createRoot } = ReactDOM;
 
-        // --- Icons (Lucide is globally available but needs mapping or SVG usage in React simple setup)
-        // For simplicity in CDN React, we'll use simple SVGs or mapping if Lucide global is tricky.
-        // Lucide provides `lucide.createIcons()` but within React components it's easier to just use SVGs directly 
-        // OR a small wrapper. Let's use simple SVGs for reliability in this no-build setup.
+        // --- Utils ---
+        const timeAgo = (dateString) => {
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
 
-        const IconShield = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>;
-        const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>;
-        const IconHistory = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>;
-        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
-        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>;
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " years ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " months ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " days ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " hours ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " minutes ago";
+            return Math.floor(seconds) + " seconds ago";
+        };
 
-        // --- Components
+        const copyToClipboard = (text) => {
+            navigator.clipboard.writeText(text);
+            // Could add toast here
+        };
 
-        const Dashboard = () => {
+        const exportToCSV = (data) => {
+            if (!data || !data.length) return;
+            const headers = ["Timestamp", "URL", "Status", "Confidence", "Analysis"];
+            const csvContent = "data:text/csv;charset=utf-8,"
+                + headers.join(",") + "\n"
+                + data.map(row => {
+                    return `"${row.timestamp}","${row.url}","${row.status}","${row.confidence}","${row.analysis.replace(/"/g, '""')}"`;
+                }).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "scan_history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // --- Icons ---
+        const Icons = {
+            Shield: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>,
+            Link: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>,
+            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>,
+            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6" /><path d="M2.5 22v-6h6" /><path d="M2 11.5a10 10 0 0 1 18.8-4.3L22 10" /><path d="M22 12.5a10 10 0 0 1-18.8 4.2L2 12" /></svg>,
+            Download: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
+            Copy: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
+            External: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>,
+            Pulse: () => <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>,
+        };
+
+        // --- Dashboard View ---
+        const DashboardView = ({ setView }) => {
             const [url, setUrl] = useState('');
             const [loading, setLoading] = useState(false);
             const [result, setResult] = useState(null);
-            const [error, setError] = useState('');
 
             const handleScan = async (e) => {
                 e.preventDefault();
                 if (!url) return;
                 setLoading(true);
-                setError('');
                 setResult(null);
-
                 try {
                     const response = await axios.post('/scan', { url });
                     setResult(response.data);
                 } catch (err) {
-                    setError('Failed to scan URL. Is the backend running?');
+                    alert("Scan failed. Check backend.");
                 } finally {
                     setLoading(false);
                 }
             };
 
+            const fillExample = () => setUrl("http://suspicious-bank-login-verify.com/secure");
+
+            // Hero Section
             return (
-                <div className="flex flex-col items-center justify-center pt-10 px-4 animate-fade-in-up">
-                    <div className="text-center mb-10 space-y-4 max-w-2xl">
-                        <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight">
-                            Verify Links in <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Real-Time</span>
-                        </h1>
-                        <p className="text-gray-400 text-lg">
-                            Advanced AI detection for Phishing & Malware. Powered by Deep Learning and Gemini.
+                <div className="flex flex-col items-center justify-center min-h-[80vh] w-full max-w-4xl mx-auto px-4 animate-fade-in-up">
+                    <div className="mb-8 p-4 bg-surface/50 rounded-2xl border border-white/5 shadow-2xl">
+                        <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center mx-auto text-primary mb-4">
+                            <Icons.Shield />
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-bold text-center text-white mb-2">Check URL Safety</h1>
+                        <p className="text-center text-secondary">
+                            Enter any URL to analyze its safety using AI-powered detection.<br />
+                            Get instant results with confidence scores and detailed explanations.
                         </p>
                     </div>
 
-                    <div className="w-full max-w-3xl">
-                        <form onSubmit={handleScan} className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-                            <div className="relative glass-card p-2 flex items-center">
-                                <span className="ml-3 text-gray-400"><IconSearch /></span>
-                                <input
-                                    type="text"
-                                    value={url}
-                                    onChange={(e) => setUrl(e.target.value)}
-                                    placeholder="Paste a suspicious URL here..."
-                                    className="bg-transparent border-none outline-none text-white w-full px-4 py-3 placeholder-gray-500 text-lg focus:ring-0"
-                                />
-                                <button type="submit" disabled={loading} className="btn-primary shrink-0 disabled:opacity-50">
-                                    {loading ? 'Scanning...' : 'Scan Now'}
-                                </button>
+                    <div className="w-full max-w-2xl">
+                        <form onSubmit={handleScan} className="bg-surface p-2 rounded-xl border border-white/10 flex items-center shadow-lg mb-4">
+                            <div className="pl-4 text-secondary">
+                                <Icons.Link />
                             </div>
+                            <input
+                                type="text"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                placeholder="Enter URL to analyze (e.g., https://example.com)"
+                                className="flex-1 bg-transparent border-none outline-none text-white px-4 py-3 placeholder-slate-600"
+                            />
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="bg-primary hover:bg-primaryHover text-slate-900 font-bold py-2 px-6 rounded-lg transition-colors flex items-center space-x-2"
+                            >
+                                {loading ? <span>Scanning...</span> : <><Icons.Search /> <span>Check URL</span></>}
+                            </button>
                         </form>
 
-                        {error && <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-lg">{error}</div>}
+                        <div className="flex justify-end">
+                            <button onClick={fillExample} className="text-sm text-secondary hover:text-primary transition-colors flex items-center space-x-1">
+                                <span>Try Example</span>
+                            </button>
+                        </div>
+                    </div>
 
-                        {result && (
-                            <div className="mt-8 glass-card p-6 md:p-8 relative overflow-hidden">
-                                <div className={`absolute top-0 left-0 w-1 h-full ${result.status === 'Safe' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                <div className="flex justify-between items-center mb-6">
-                                    <div className="flex items-center space-x-3">
-                                        {result.status === 'Safe' ? <IconCheck /> : <IconAlert />}
-                                        <h2 className={`text-2xl font-bold ${result.status === 'Safe' ? 'text-green-400' : 'text-red-400'}`}>
+                    {/* Features Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-16">
+                        {[
+                            { title: "AI Analysis", desc: "Machine learning models trained on millions of URLs" },
+                            { title: "Instant Results", desc: "Get safety scores in seconds with detailed explanations" },
+                            { title: "History Tracking", desc: "All analyzed URLs are saved for future reference" }
+                        ].map((item, idx) => (
+                            <div key={idx} className="bg-surface/30 p-6 rounded-xl border border-white/5 hover:border-primary/30 transition-colors text-center">
+                                <h3 className="text-white font-semibold mb-2">{item.title}</h3>
+                                <p className="text-sm text-secondary">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Result Modal / Overlay */}
+                    {result && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setResult(null)}>
+                            <div className="bg-surface border border-white/10 rounded-2xl max-w-2xl w-full p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h2 className={`text-3xl font-bold flex items-center space-x-3 ${result.status === 'Safe' ? 'text-success' : 'text-danger'}`}>
                                             {result.status}
                                         </h2>
+                                        <p className="text-secondary mt-1">{result.url}</p>
                                     </div>
                                     <div className="bg-white/5 px-4 py-2 rounded-lg text-center">
-                                        <span className="block text-xs text-gray-400 uppercase">Confidence</span>
+                                        <span className="block text-xs text-secondary uppercase">Confidence</span>
                                         <span className="text-2xl font-bold text-white">{(result.confidence * 100).toFixed(1)}%</span>
                                     </div>
                                 </div>
-                                <div className="bg-white/5 rounded-lg p-5 border border-white/5">
-                                    <h3 className="text-sm font-semibold text-gray-300 uppercase mb-2">AI Analysis</h3>
-                                    <p className="text-gray-300 whitespace-pre-line text-sm">{result.analysis}</p>
+
+                                <div className="bg-bg rounded-xl p-6 border border-white/5 mb-6">
+                                    <h3 className="text-sm font-semibold text-primary uppercase mb-3">AI Analysis</h3>
+                                    <p className="text-slate-300 leading-relaxed whitespace-pre-line">{result.analysis}</p>
                                 </div>
+
+                                <button onClick={() => setResult(null)} className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-colors">
+                                    Close Results
+                                </button>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             );
         };
 
-        const History = () => {
-            const [history, setHistory] = useState([]);
-            const [stats, setStats] = useState({ safe_count: 0, malicious_count: 0, total_scans: 0 });
+        // --- History View ---
+        const HistoryView = () => {
+            const [data, setData] = useState([]);
 
-            useEffect(() => {
-                Promise.all([
-                    axios.get('/history'),
-                    axios.get('/stats')
-                ]).then(([h, s]) => {
-                    setHistory(h.data);
-                    setStats(s.data);
-                });
-            }, []);
+            const fetchHistory = async () => {
+                try {
+                    const res = await axios.get('/history?limit=50');
+                    setData(res.data);
+                } catch (e) {
+                    console.error(e);
+                }
+            };
+
+            useEffect(() => { fetchHistory(); }, []);
 
             return (
-                <div className="max-w-6xl mx-auto pt-6 animate-fade-in-up">
-                    <h1 className="text-3xl font-bold text-white mb-8 border-l-4 border-primary pl-4">Scan History</h1>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="glass-card p-6 text-center">
-                            <div className="text-gray-400 text-sm uppercase">Total Scans</div>
-                            <div className="text-4xl font-bold text-secondary mt-2">{stats.total_scans}</div>
+                <div className="max-w-6xl mx-auto px-4 py-10 animate-fade-in-up">
+                    <div className="text-center mb-10">
+                        <div className="w-16 h-16 bg-surface border border-white/10 rounded-2xl flex items-center justify-center mx-auto text-primary mb-4 shadow-lg shadow-primary/20">
+                            <Icons.Pulse />
                         </div>
-                        <div className="glass-card p-6 text-center">
-                            <div className="text-gray-400 text-sm uppercase">Malicious</div>
-                            <div className="text-4xl font-bold text-red-500 mt-2">{stats.malicious_count}</div>
-                        </div>
-                        <div className="glass-card p-6 text-center">
-                            <div className="text-gray-400 text-sm uppercase">Safe</div>
-                            <div className="text-4xl font-bold text-green-500 mt-2">{stats.safe_count}</div>
-                        </div>
+                        <h2 className="text-3xl font-bold text-white mb-2">Analysis History</h2>
+                        <p className="text-secondary">View and export your URL analysis history.</p>
                     </div>
 
-                    <div className="glass-card overflow-hidden">
-                        <table className="w-full text-left text-sm text-gray-300">
-                            <thead className="bg-white/5 uppercase text-xs font-semibold text-gray-400">
-                                <tr>
-                                    <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4">URL</th>
-                                    <th className="px-6 py-4">Confidence</th>
-                                    <th className="px-6 py-4">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {history.map((item, idx) => (
-                                    <tr key={idx} className="hover:bg-white/5">
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${item.status === 'Safe' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                {item.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 max-w-xs truncate">{item.url}</td>
-                                        <td className="px-6 py-4">{(item.confidence * 100).toFixed(1)}%</td>
-                                        <td className="px-6 py-4">{new Date(item.timestamp).toLocaleDateString()}</td>
+                    <div className="glass-panel p-1">
+                        <div className="flex justify-between items-center p-4 border-b border-white/5 bg-surface/50 rounded-t-lg">
+                            <div className="flex space-x-2">
+                                <button onClick={fetchHistory} className="flex items-center space-x-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors border border-white/5">
+                                    <Icons.Refresh /> <span>Refresh</span>
+                                </button>
+                                <button onClick={() => exportToCSV(data)} className="flex items-center space-x-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-white transition-colors border border-white/5">
+                                    <Icons.Download /> <span>Export CSV</span>
+                                </button>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm text-secondary">
+                                <span>Show</span>
+                                <select className="bg-bg border border-white/10 rounded px-2 py-1 text-white outline-none">
+                                    <option>20</option>
+                                    <option>50</option>
+                                </select>
+                                <span>entries</span>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-bg text-secondary text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th className="px-6 py-4">Time</th>
+                                        <th className="px-6 py-4">URL</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4">Confidence</th>
+                                        <th className="px-6 py-4 text-right">Details</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 text-sm text-slate-300">
+                                    {data.map((row, i) => (
+                                        <tr key={i} className="hover:bg-white/5 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-secondary">{timeAgo(row.timestamp)}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center space-x-2 max-w-sm">
+                                                    <span className="truncate">{row.url}</span>
+                                                    <button onClick={() => copyToClipboard(row.url)} className="text-secondary hover:text-primary"><Icons.Copy /></button>
+                                                    <a href={row.url} target="_blank" className="text-secondary hover:text-primary"><Icons.External /></a>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${row.status === 'Safe'
+                                                        ? 'bg-success/10 text-success border border-success/20'
+                                                        : 'bg-danger/10 text-danger border border-danger/20'
+                                                    }`}>
+                                                    {row.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 w-48">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="flex-1 h-1.5 bg-bg rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`h-full ${row.status === 'Safe' ? 'bg-success' : 'bg-danger'}`}
+                                                            style={{ width: `${row.confidence * 100}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-xs font-mono">{(row.confidence * 100).toFixed(0)}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button className="text-primary hover:text-primaryHover text-xs font-semibold">Show</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="p-4 border-t border-white/5 flex justify-end space-x-2">
+                            <button className="px-3 py-1 text-sm bg-white/5 hover:bg-white/10 rounded text-secondary disabled:opacity-50" disabled>Previous</button>
+                            <button className="px-3 py-1 text-sm bg-white/5 hover:bg-white/10 rounded text-secondary">Next</button>
+                        </div>
                     </div>
                 </div>
             );
         };
 
+        // --- Main App Shell ---
         const App = () => {
             const [view, setView] = useState('dashboard');
 
             return (
-                <div className="min-h-screen">
-                    <nav className="glass-card m-4 px-6 py-4 flex justify-between items-center sticky top-4 z-50">
-                        <div className="flex items-center space-x-2 text-white font-bold text-xl">
-                            <IconShield />
-                            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">URL SafeGuard</span>
-                        </div>
-                        <div className="flex space-x-1">
-                            <button
-                                onClick={() => setView('dashboard')}
-                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view === 'dashboard' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                <IconDashboard /> <span>Dashboard</span>
-                            </button>
-                            <button
-                                onClick={() => setView('history')}
-                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view === 'history' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                <IconHistory /> <span>History</span>
-                            </button>
+                <div className="min-h-screen bg-bg">
+                    {/* Header */}
+                    <nav className="border-b border-white/5 bg-bg/80 backdrop-blur-md sticky top-0 z-40">
+                        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                                <div className="text-primary"><Icons.Shield /></div>
+                                <div>
+                                    <h1 className="text-white font-bold text-lg leading-none">URL Detector <span className="text-primary">Dashboard</span></h1>
+                                    <span className="text-xs text-secondary">AI-powered URL safety analysis</span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center space-x-4">
+                                {/* Tabs */}
+                                <div className="bg-surface p-1 rounded-lg border border-white/5 flex">
+                                    <button
+                                        onClick={() => setView('dashboard')}
+                                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-primary text-slate-900 shadow-lg shadow-primary/20' : 'text-secondary hover:text-white'}`}
+                                    >
+                                        Check URL
+                                    </button>
+                                    <button
+                                        onClick={() => setView('history')}
+                                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${view === 'history' ? 'bg-primary text-slate-900 shadow-lg shadow-primary/20' : 'text-secondary hover:text-white'}`}
+                                    >
+                                        History
+                                    </button>
+                                </div>
+
+                                {/* Status Pills */}
+                                <div className="hidden md:flex items-center space-x-2">
+                                    <span className="px-2 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded text-xs font-bold flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Demo Mode
+                                    </span>
+                                    <span className="text-xs text-success flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span> API Online
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </nav>
 
-                    <main className="container mx-auto p-4">
-                        {view === 'dashboard' ? <Dashboard /> : <History />}
+                    {/* Content */}
+                    <main className="py-8">
+                        {view === 'dashboard' ? <DashboardView setView={setView} /> : <HistoryView />}
                     </main>
                 </div>
             );
