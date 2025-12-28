@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>URL Detector | AI Powered</title>
-    
+
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -27,49 +28,74 @@
             }
         }
     </script>
-    
+
     <!-- React & Babel (CDN) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-    
-    <!-- Axios & Lucide (CDN) -->
+    <!-- Use Babel 7 for better React 18 support -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Axios -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
         body {
             background-color: #0f172a;
-            background-image: 
+            background-image:
                 radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
                 radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
             background-attachment: fixed;
             color: #e2e8f0;
             font-family: 'Inter', sans-serif;
+            margin: 0;
+            min-height: 100vh;
         }
-        .glass-card {
-            background-color: rgba(30, 41, 59, 0.5);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .btn-primary {
-            background: linear-gradient(to right, #6366f1, #ec4899);
+
+        #error-log {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(220, 38, 38, 0.9);
             color: white;
-            font-weight: 700;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            transition: all 0.3s;
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
-        }
-        .btn-primary:hover {
-            opacity: 0.9;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            white-space: pre-wrap;
         }
     </style>
+    <script>
+        // Global Error Handler to show issues on screen
+        window.onerror = function (msg, url, line, col, error) {
+            const errorBox = document.getElementById('error-log');
+            if (errorBox) {
+                errorBox.style.display = 'block';
+                errorBox.textContent += `Error: ${msg}\nLine: ${line}:${col}\n\n`;
+            }
+            console.error("Global Error:", msg, error);
+            return false;
+        };
+    </script>
 </head>
+
 <body>
-    <div id="root"></div>
+    <div id="error-log"></div>
+    <div id="root">
+        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+            <div style="text-align: center;">
+                <svg class="animate-spin" style="width: 40px; height: 40px; margin-bottom: 1rem;"
+                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <p>Initializing App...</p>
+            </div>
+        </div>
+    </div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -80,12 +106,12 @@
         // Lucide provides `lucide.createIcons()` but within React components it's easier to just use SVGs directly 
         // OR a small wrapper. Let's use simple SVGs for reliability in this no-build setup.
 
-        const IconShield = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>;
-        const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
-        const IconHistory = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>;
-        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>;
-        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>;
+        const IconShield = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>;
+        const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>;
+        const IconHistory = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v5h5" /><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8" /><path d="M12 7v5l4 2" /></svg>;
+        const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
+        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>;
 
         // --- Components
 
@@ -128,8 +154,8 @@
                             <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
                             <div className="relative glass-card p-2 flex items-center">
                                 <span className="ml-3 text-gray-400"><IconSearch /></span>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
                                     placeholder="Paste a suspicious URL here..."
@@ -184,22 +210,22 @@
             }, []);
 
             return (
-                 <div className="max-w-6xl mx-auto pt-6 animate-fade-in-up">
+                <div className="max-w-6xl mx-auto pt-6 animate-fade-in-up">
                     <h1 className="text-3xl font-bold text-white mb-8 border-l-4 border-primary pl-4">Scan History</h1>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                       <div className="glass-card p-6 text-center">
+                        <div className="glass-card p-6 text-center">
                             <div className="text-gray-400 text-sm uppercase">Total Scans</div>
                             <div className="text-4xl font-bold text-secondary mt-2">{stats.total_scans}</div>
-                       </div>
-                       <div className="glass-card p-6 text-center">
+                        </div>
+                        <div className="glass-card p-6 text-center">
                             <div className="text-gray-400 text-sm uppercase">Malicious</div>
                             <div className="text-4xl font-bold text-red-500 mt-2">{stats.malicious_count}</div>
-                       </div>
-                       <div className="glass-card p-6 text-center">
+                        </div>
+                        <div className="glass-card p-6 text-center">
                             <div className="text-gray-400 text-sm uppercase">Safe</div>
                             <div className="text-4xl font-bold text-green-500 mt-2">{stats.safe_count}</div>
-                       </div>
+                        </div>
                     </div>
 
                     <div className="glass-card overflow-hidden">
@@ -216,7 +242,7 @@
                                 {history.map((item, idx) => (
                                     <tr key={idx} className="hover:bg-white/5">
                                         <td className="px-6 py-4">
-                                             <span className={`px-2 py-1 rounded text-xs font-bold ${item.status === 'Safe' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                            <span className={`px-2 py-1 rounded text-xs font-bold ${item.status === 'Safe' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                                                 {item.status}
                                             </span>
                                         </td>
@@ -243,15 +269,15 @@
                             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">URL SafeGuard</span>
                         </div>
                         <div className="flex space-x-1">
-                            <button 
-                                onClick={() => setView('dashboard')} 
-                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view==='dashboard' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                            <button
+                                onClick={() => setView('dashboard')}
+                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view === 'dashboard' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 <IconDashboard /> <span>Dashboard</span>
                             </button>
-                            <button 
-                                onClick={() => setView('history')} 
-                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view==='history' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                            <button
+                                onClick={() => setView('history')}
+                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${view === 'history' ? 'bg-primary/20 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 <IconHistory /> <span>History</span>
                             </button>
@@ -269,4 +295,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
